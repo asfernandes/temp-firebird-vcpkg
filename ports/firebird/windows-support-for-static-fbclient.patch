@@ -1,0 +1,694 @@
+diff --git a/builds/win32/make_all.bat b/builds/win32/make_all.bat
+index ebeb3910dd..ddea45b1c3 100644
+--- a/builds/win32/make_all.bat
++++ b/builds/win32/make_all.bat
+@@ -60,6 +60,10 @@ if errorlevel 1 call :ERROR build failed - see make_all_%FB_TARGET_PLATFORM%.log
+ @copy %FB_ROOT_PATH%\temp\%FB_OBJ_DIR%\firebird\plugins\*.dll %FB_OUTPUT_DIR%\plugins >nul
+ @copy %FB_ROOT_PATH%\temp\%FB_OBJ_DIR%\yvalve\fbclient.lib %FB_OUTPUT_DIR%\lib\fbclient_ms.lib >nul
+ 
++@if "%FB_ENABLE_FBCLIENT_STATIC%"=="TRUE" (
++	@copy %FB_ROOT_PATH%\temp\%FB_OBJ_DIR%\yvalve_static\fbclient_static.lib %FB_OUTPUT_DIR%\lib\fbclient_static_ms.lib >nul
++)
++
+ @if "%FB_CLIENT_ONLY%"=="" (
+ 	copy %FB_ROOT_PATH%\temp\%FB_OBJ_DIR%\firebird\intl\* %FB_OUTPUT_DIR%\intl >nul
+ 	copy %FB_ROOT_PATH%\temp\%FB_OBJ_DIR%\firebird\plugins\udr\*.dll %FB_OUTPUT_DIR%\plugins\udr >nul
+diff --git a/builds/win32/msvc15/Firebird.sln b/builds/win32/msvc15/Firebird.sln
+index 4293fbe7bd..44fca5ab09 100644
+--- a/builds/win32/msvc15/Firebird.sln
++++ b/builds/win32/msvc15/Firebird.sln
+@@ -72,6 +72,8 @@ Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "gpre_common", "gpre_common.
+ EndProject
+ Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "yvalve", "yvalve.vcxproj", "{4FE03933-98CD-4879-A135-FD9430087A6B}"
+ EndProject
++Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "yvalve_static", "yvalve_static.vcxproj", "{2BEE529C-ABA2-4E95-AB24-88CEC3A6DB55}"
++EndProject
+ Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "legacy_usermanager", "legacy_usermanager.vcxproj", "{D836FBF5-071E-4E04-8D63-C7EB6701B296}"
+ EndProject
+ Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "srp", "srp.vcxproj", "{BD00D28E-6667-414E-A4B1-6BEFC07ADB42}"
+@@ -328,6 +330,14 @@ Global
+ 		{4FE03933-98CD-4879-A135-FD9430087A6B}.Release|Win32.Build.0 = Release|Win32
+ 		{4FE03933-98CD-4879-A135-FD9430087A6B}.Release|x64.ActiveCfg = Release|x64
+ 		{4FE03933-98CD-4879-A135-FD9430087A6B}.Release|x64.Build.0 = Release|x64
++		{2BEE529C-ABA2-4E95-AB24-88CEC3A6DB55}.Debug|Win32.ActiveCfg = Debug|Win32
++		{2BEE529C-ABA2-4E95-AB24-88CEC3A6DB55}.Debug|Win32.Build.0 = Debug|Win32
++		{2BEE529C-ABA2-4E95-AB24-88CEC3A6DB55}.Debug|x64.ActiveCfg = Debug|x64
++		{2BEE529C-ABA2-4E95-AB24-88CEC3A6DB55}.Debug|x64.Build.0 = Debug|x64
++		{2BEE529C-ABA2-4E95-AB24-88CEC3A6DB55}.Release|Win32.ActiveCfg = Release|Win32
++		{2BEE529C-ABA2-4E95-AB24-88CEC3A6DB55}.Release|Win32.Build.0 = Release|Win32
++		{2BEE529C-ABA2-4E95-AB24-88CEC3A6DB55}.Release|x64.ActiveCfg = Release|x64
++		{2BEE529C-ABA2-4E95-AB24-88CEC3A6DB55}.Release|x64.Build.0 = Release|x64
+ 		{D836FBF5-071E-4E04-8D63-C7EB6701B296}.Debug|Win32.ActiveCfg = Debug|Win32
+ 		{D836FBF5-071E-4E04-8D63-C7EB6701B296}.Debug|Win32.Build.0 = Debug|Win32
+ 		{D836FBF5-071E-4E04-8D63-C7EB6701B296}.Debug|x64.ActiveCfg = Debug|x64
+@@ -433,6 +443,7 @@ Global
+ 		{20DEBF08-EF0A-4C94-ADEB-FE9BBA14588B} = {5A1544E3-A87E-4F78-B197-528C12A64C7D}
+ 		{2925B855-5975-44AE-BB00-1217A2A4E511} = {DA5015E4-8349-4DAB-A1E5-18BDBDDA3022}
+ 		{4FE03933-98CD-4879-A135-FD9430087A6B} = {5A1544E3-A87E-4F78-B197-528C12A64C7D}
++		{2BEE529C-ABA2-4E95-AB24-88CEC3A6DB55} = {DA5015E4-8349-4DAB-A1E5-18BDBDDA3022}
+ 		{D836FBF5-071E-4E04-8D63-C7EB6701B296} = {5A1544E3-A87E-4F78-B197-528C12A64C7D}
+ 		{BD00D28E-6667-414E-A4B1-6BEFC07ADB42} = {5A1544E3-A87E-4F78-B197-528C12A64C7D}
+ 		{062BD3C7-2D01-44F6-8D79-070F688C559F} = {5A1544E3-A87E-4F78-B197-528C12A64C7D}
+diff --git a/builds/win32/msvc15/FirebirdBoot.sln b/builds/win32/msvc15/FirebirdBoot.sln
+index 7defc34904..2662af9328 100644
+--- a/builds/win32/msvc15/FirebirdBoot.sln
++++ b/builds/win32/msvc15/FirebirdBoot.sln
+@@ -12,6 +12,8 @@ Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "btyacc", "btyacc.vcxproj",
+ EndProject
+ Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "yvalve", "yvalve.vcxproj", "{4FE03933-98CD-4879-A135-FD9430087A6B}"
+ EndProject
++Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "yvalve_static", "yvalve_static.vcxproj", "{2BEE529C-ABA2-4E95-AB24-88CEC3A6DB55}"
++EndProject
+ Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "gpre_common", "gpre_common.vcxproj", "{2925B855-5975-44AE-BB00-1217A2A4E511}"
+ EndProject
+ Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "remote", "remote.vcxproj", "{4BCC693D-1745-45ED-8302-E5E2F979549A}"
+@@ -64,6 +66,14 @@ Global
+ 		{4FE03933-98CD-4879-A135-FD9430087A6B}.Release|Win32.Build.0 = Release|Win32
+ 		{4FE03933-98CD-4879-A135-FD9430087A6B}.Release|x64.ActiveCfg = Release|x64
+ 		{4FE03933-98CD-4879-A135-FD9430087A6B}.Release|x64.Build.0 = Release|x64
++		{2BEE529C-ABA2-4E95-AB24-88CEC3A6DB55}.Debug|Win32.ActiveCfg = Debug|Win32
++		{2BEE529C-ABA2-4E95-AB24-88CEC3A6DB55}.Debug|Win32.Build.0 = Debug|Win32
++		{2BEE529C-ABA2-4E95-AB24-88CEC3A6DB55}.Debug|x64.ActiveCfg = Debug|x64
++		{2BEE529C-ABA2-4E95-AB24-88CEC3A6DB55}.Debug|x64.Build.0 = Debug|x64
++		{2BEE529C-ABA2-4E95-AB24-88CEC3A6DB55}.Release|Win32.ActiveCfg = Release|Win32
++		{2BEE529C-ABA2-4E95-AB24-88CEC3A6DB55}.Release|Win32.Build.0 = Release|Win32
++		{2BEE529C-ABA2-4E95-AB24-88CEC3A6DB55}.Release|x64.ActiveCfg = Release|x64
++		{2BEE529C-ABA2-4E95-AB24-88CEC3A6DB55}.Release|x64.Build.0 = Release|x64
+ 		{2925B855-5975-44AE-BB00-1217A2A4E511}.Debug|Win32.ActiveCfg = Debug|Win32
+ 		{2925B855-5975-44AE-BB00-1217A2A4E511}.Debug|Win32.Build.0 = Debug|Win32
+ 		{2925B855-5975-44AE-BB00-1217A2A4E511}.Debug|x64.ActiveCfg = Debug|x64
+diff --git a/builds/win32/msvc15/FirebirdExamples.sln b/builds/win32/msvc15/FirebirdExamples.sln
+index f07f71394c..df5fb282b6 100644
+--- a/builds/win32/msvc15/FirebirdExamples.sln
++++ b/builds/win32/msvc15/FirebirdExamples.sln
+@@ -17,6 +17,8 @@ Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "common", "common.vcxproj",
+ EndProject
+ Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "yvalve", "yvalve.vcxproj", "{4FE03933-98CD-4879-A135-FD9430087A6B}"
+ EndProject
++Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "yvalve_static", "yvalve_static.vcxproj", "{2BEE529C-ABA2-4E95-AB24-88CEC3A6DB55}"
++EndProject
+ Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "remote", "remote.vcxproj", "{4BCC693D-1745-45ED-8302-E5E2F979549A}"
+ EndProject
+ Global
+@@ -71,6 +73,14 @@ Global
+ 		{4FE03933-98CD-4879-A135-FD9430087A6B}.Release|Win32.Build.0 = Release|Win32
+ 		{4FE03933-98CD-4879-A135-FD9430087A6B}.Release|x64.ActiveCfg = Release|x64
+ 		{4FE03933-98CD-4879-A135-FD9430087A6B}.Release|x64.Build.0 = Release|x64
++		{2BEE529C-ABA2-4E95-AB24-88CEC3A6DB55}.Debug|Win32.ActiveCfg = Debug|Win32
++		{2BEE529C-ABA2-4E95-AB24-88CEC3A6DB55}.Debug|Win32.Build.0 = Debug|Win32
++		{2BEE529C-ABA2-4E95-AB24-88CEC3A6DB55}.Debug|x64.ActiveCfg = Debug|x64
++		{2BEE529C-ABA2-4E95-AB24-88CEC3A6DB55}.Debug|x64.Build.0 = Debug|x64
++		{2BEE529C-ABA2-4E95-AB24-88CEC3A6DB55}.Release|Win32.ActiveCfg = Release|Win32
++		{2BEE529C-ABA2-4E95-AB24-88CEC3A6DB55}.Release|Win32.Build.0 = Release|Win32
++		{2BEE529C-ABA2-4E95-AB24-88CEC3A6DB55}.Release|x64.ActiveCfg = Release|x64
++		{2BEE529C-ABA2-4E95-AB24-88CEC3A6DB55}.Release|x64.Build.0 = Release|x64
+ 		{4BCC693D-1745-45ED-8302-E5E2F979549A}.Debug|Win32.ActiveCfg = Debug|Win32
+ 		{4BCC693D-1745-45ED-8302-E5E2F979549A}.Debug|Win32.Build.0 = Debug|Win32
+ 		{4BCC693D-1745-45ED-8302-E5E2F979549A}.Debug|x64.ActiveCfg = Debug|x64
+diff --git a/builds/win32/msvc15/yvalve.vcxproj b/builds/win32/msvc15/yvalve.vcxproj
+index 5772b98011..5f1b8eba06 100644
+--- a/builds/win32/msvc15/yvalve.vcxproj
++++ b/builds/win32/msvc15/yvalve.vcxproj
+@@ -19,57 +19,11 @@
+     </ProjectConfiguration>
+   </ItemGroup>
+   <ItemGroup>
+-    <ClCompile Include="..\..\..\src\auth\SecureRemotePassword\client\SrpClient.cpp" />
+-    <ClCompile Include="..\..\..\src\auth\SecurityDatabase\LegacyClient.cpp" />
+     <ClCompile Include="..\..\..\src\jrd\os\win32\ibinitdll.cpp" />
+-    <ClCompile Include="..\..\..\src\plugins\crypt\arc4\Arc4.cpp" />
+-    <ClCompile Include="..\..\..\src\remote\client\BlrFromMessage.cpp" />
+-    <ClCompile Include="..\..\..\src\remote\client\interface.cpp" />
+-    <ClCompile Include="..\..\..\src\yvalve\alt.cpp" />
+-    <ClCompile Include="..\..\..\src\yvalve\array.cpp" />
+-    <ClCompile Include="..\..\..\src\yvalve\blob.cpp" />
+-    <ClCompile Include="..\..\..\src\yvalve\config\os\win32\config_root.cpp" />
+-    <ClCompile Include="..\..\..\src\yvalve\DistributedTransaction.cpp" />
+-    <ClCompile Include="..\..\..\src\yvalve\gds.cpp" />
+-    <ClCompile Include="..\..\..\src\yvalve\keywordsStub.cpp" />
+-    <ClCompile Include="..\..\..\src\yvalve\MasterImplementation.cpp" />
+-    <ClCompile Include="..\..\..\src\yvalve\perf.cpp" />
+-    <ClCompile Include="..\..\..\src\yvalve\PluginManager.cpp" />
+-    <ClCompile Include="..\..\..\src\yvalve\preparse.cpp" />
+-    <ClCompile Include="..\..\..\src\yvalve\user_dsql.cpp" />
+-    <ClCompile Include="..\..\..\src\yvalve\utl.cpp" />
+-    <ClCompile Include="..\..\..\src\yvalve\why.cpp" />
+   </ItemGroup>
+   <ItemGroup>
+-    <ClInclude Include="..\..\..\src\auth\SecureRemotePassword\client\SrpClient.h" />
+-    <ClInclude Include="..\..\..\src\auth\SecurityDatabase\LegacyClient.h" />
+-    <ClInclude Include="..\..\..\src\auth\trusted\AuthSspi.h" />
+-    <ClInclude Include="..\..\..\src\plugins\crypt\arc4\Arc4.h" />
+-    <ClInclude Include="..\..\..\src\remote\client\BlrFromMessage.h" />
+-    <ClInclude Include="..\..\..\src\yvalve\alt_proto.h" />
+-    <ClInclude Include="..\..\..\src\yvalve\array_proto.h" />
+-    <ClInclude Include="..\..\..\src\yvalve\blob_proto.h" />
+-    <ClInclude Include="..\..\..\src\yvalve\gds_proto.h" />
+-    <ClInclude Include="..\..\..\src\yvalve\keywordsStub.h" />
+-    <ClInclude Include="..\..\..\src\yvalve\perf.h" />
+-    <ClInclude Include="..\..\..\src\yvalve\perf_proto.h" />
+-    <ClInclude Include="..\..\..\src\yvalve\PluginManager.h" />
+-    <ClInclude Include="..\..\..\src\yvalve\prepa_proto.h" />
+-    <ClInclude Include="..\..\..\src\yvalve\user__proto.h" />
+-    <ClInclude Include="..\..\..\src\yvalve\utl_proto.h" />
+-    <ClInclude Include="..\..\..\src\yvalve\why_proto.h" />
+-  </ItemGroup>
+-  <ItemGroup>
+-    <ProjectReference Include="common.vcxproj">
+-      <Project>{15605f44-bffd-444f-ad4c-55dc9d704465}</Project>
+-      <Private>true</Private>
+-      <ReferenceOutputAssembly>false</ReferenceOutputAssembly>
+-      <CopyLocalSatelliteAssemblies>false</CopyLocalSatelliteAssemblies>
+-      <LinkLibraryDependencies>true</LinkLibraryDependencies>
+-      <UseLibraryDependencyInputs>false</UseLibraryDependencyInputs>
+-    </ProjectReference>
+-    <ProjectReference Include="remote.vcxproj">
+-      <Project>{4bcc693d-1745-45ed-8302-e5e2f979549a}</Project>
++    <ProjectReference Include="yvalve_static.vcxproj">
++      <Project>{2BEE529C-ABA2-4E95-AB24-88CEC3A6DB55}</Project>
+       <Private>true</Private>
+       <ReferenceOutputAssembly>false</ReferenceOutputAssembly>
+       <CopyLocalSatelliteAssemblies>false</CopyLocalSatelliteAssemblies>
+@@ -231,4 +185,4 @@
+   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
+   <ImportGroup Label="ExtensionTargets">
+   </ImportGroup>
+-</Project>
+\ No newline at end of file
++</Project>
+diff --git a/builds/win32/msvc15/yvalve.vcxproj.filters b/builds/win32/msvc15/yvalve.vcxproj.filters
+index 09ca441a43..13792ed06c 100644
+--- a/builds/win32/msvc15/yvalve.vcxproj.filters
++++ b/builds/win32/msvc15/yvalve.vcxproj.filters
+@@ -1,142 +1,17 @@
+ ﻿<?xml version="1.0" encoding="utf-8"?>
+ <Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+   <ItemGroup>
+-    <Filter Include="headers">
+-      <UniqueIdentifier>{e851796a-334f-465a-87d4-3a8493cde72c}</UniqueIdentifier>
+-    </Filter>
+     <Filter Include="source">
+       <UniqueIdentifier>{c8501fd3-5859-4685-baad-969e1b6e2e1c}</UniqueIdentifier>
+     </Filter>
+     <Filter Include="Resource files">
+       <UniqueIdentifier>{a06a0231-22bb-432f-95c2-ee97b9a1cee8}</UniqueIdentifier>
+     </Filter>
+-    <Filter Include="GPRE files">
+-      <UniqueIdentifier>{754afcc7-5b6d-4620-abe9-78b4653e08b0}</UniqueIdentifier>
+-    </Filter>
+-    <Filter Include="preprocessed">
+-      <UniqueIdentifier>{5ee9ba85-e5ee-4f0d-a7b6-9ac703ff491c}</UniqueIdentifier>
+-    </Filter>
+-    <Filter Include="Auth">
+-      <UniqueIdentifier>{2d91d43b-c689-41b3-9d55-227f0a4f5193}</UniqueIdentifier>
+-    </Filter>
+-    <Filter Include="Remote client">
+-      <UniqueIdentifier>{e5984b18-8167-41b3-9f37-51ccf2fd566e}</UniqueIdentifier>
+-    </Filter>
+   </ItemGroup>
+   <ItemGroup>
+-    <ClCompile Include="..\..\..\src\yvalve\why.cpp">
+-      <Filter>source</Filter>
+-    </ClCompile>
+-    <ClCompile Include="..\..\..\src\yvalve\alt.cpp">
+-      <Filter>source</Filter>
+-    </ClCompile>
+-    <ClCompile Include="..\..\..\src\yvalve\array.cpp">
+-      <Filter>source</Filter>
+-    </ClCompile>
+-    <ClCompile Include="..\..\..\src\yvalve\blob.cpp">
+-      <Filter>source</Filter>
+-    </ClCompile>
+-    <ClCompile Include="..\..\..\src\yvalve\DistributedTransaction.cpp">
+-      <Filter>source</Filter>
+-    </ClCompile>
+-    <ClCompile Include="..\..\..\src\yvalve\gds.cpp">
+-      <Filter>source</Filter>
+-    </ClCompile>
+-    <ClCompile Include="..\..\..\src\yvalve\keywordsStub.cpp">
+-      <Filter>source</Filter>
+-    </ClCompile>
+-    <ClCompile Include="..\..\..\src\yvalve\perf.cpp">
+-      <Filter>source</Filter>
+-    </ClCompile>
+-    <ClCompile Include="..\..\..\src\yvalve\preparse.cpp">
+-      <Filter>source</Filter>
+-    </ClCompile>
+-    <ClCompile Include="..\..\..\src\yvalve\user_dsql.cpp">
+-      <Filter>source</Filter>
+-    </ClCompile>
+-    <ClCompile Include="..\..\..\src\yvalve\utl.cpp">
+-      <Filter>source</Filter>
+-    </ClCompile>
+-    <ClCompile Include="..\..\..\src\auth\SecurityDatabase\LegacyClient.cpp">
+-      <Filter>Auth</Filter>
+-    </ClCompile>
+     <ClCompile Include="..\..\..\src\jrd\os\win32\ibinitdll.cpp">
+       <Filter>source</Filter>
+     </ClCompile>
+-    <ClCompile Include="..\..\..\src\remote\client\interface.cpp">
+-      <Filter>Remote client</Filter>
+-    </ClCompile>
+-    <ClCompile Include="..\..\..\src\yvalve\PluginManager.cpp">
+-      <Filter>source</Filter>
+-    </ClCompile>
+-    <ClCompile Include="..\..\..\src\yvalve\MasterImplementation.cpp">
+-      <Filter>source</Filter>
+-    </ClCompile>
+-    <ClCompile Include="..\..\..\src\auth\SecureRemotePassword\client\SrpClient.cpp">
+-      <Filter>Auth</Filter>
+-    </ClCompile>
+-    <ClCompile Include="..\..\..\src\plugins\crypt\arc4\Arc4.cpp">
+-      <Filter>source</Filter>
+-    </ClCompile>
+-    <ClCompile Include="..\..\..\src\remote\client\BlrFromMessage.cpp">
+-      <Filter>Remote client</Filter>
+-    </ClCompile>
+-    <ClCompile Include="..\..\..\src\yvalve\config\os\win32\config_root.cpp">
+-      <Filter>source</Filter>
+-    </ClCompile>
+-  </ItemGroup>
+-  <ItemGroup>
+-    <ClInclude Include="..\..\..\src\yvalve\why_proto.h">
+-      <Filter>headers</Filter>
+-    </ClInclude>
+-    <ClInclude Include="..\..\..\src\yvalve\alt_proto.h">
+-      <Filter>headers</Filter>
+-    </ClInclude>
+-    <ClInclude Include="..\..\..\src\yvalve\array_proto.h">
+-      <Filter>headers</Filter>
+-    </ClInclude>
+-    <ClInclude Include="..\..\..\src\yvalve\blob_proto.h">
+-      <Filter>headers</Filter>
+-    </ClInclude>
+-    <ClInclude Include="..\..\..\src\yvalve\gds_proto.h">
+-      <Filter>headers</Filter>
+-    </ClInclude>
+-    <ClInclude Include="..\..\..\src\yvalve\keywordsStub.h">
+-      <Filter>headers</Filter>
+-    </ClInclude>
+-    <ClInclude Include="..\..\..\src\yvalve\perf.h">
+-      <Filter>headers</Filter>
+-    </ClInclude>
+-    <ClInclude Include="..\..\..\src\yvalve\perf_proto.h">
+-      <Filter>headers</Filter>
+-    </ClInclude>
+-    <ClInclude Include="..\..\..\src\yvalve\prepa_proto.h">
+-      <Filter>headers</Filter>
+-    </ClInclude>
+-    <ClInclude Include="..\..\..\src\yvalve\user__proto.h">
+-      <Filter>headers</Filter>
+-    </ClInclude>
+-    <ClInclude Include="..\..\..\src\yvalve\utl_proto.h">
+-      <Filter>headers</Filter>
+-    </ClInclude>
+-    <ClInclude Include="..\..\..\src\auth\SecurityDatabase\LegacyClient.h">
+-      <Filter>headers</Filter>
+-    </ClInclude>
+-    <ClInclude Include="..\..\..\src\auth\trusted\AuthSspi.h">
+-      <Filter>headers</Filter>
+-    </ClInclude>
+-    <ClInclude Include="..\..\..\src\yvalve\PluginManager.h">
+-      <Filter>headers</Filter>
+-    </ClInclude>
+-    <ClInclude Include="..\..\..\src\auth\SecureRemotePassword\client\SrpClient.h">
+-      <Filter>headers</Filter>
+-    </ClInclude>
+-    <ClInclude Include="..\..\..\src\plugins\crypt\arc4\Arc4.h">
+-      <Filter>headers</Filter>
+-    </ClInclude>
+-    <ClInclude Include="..\..\..\src\remote\client\BlrFromMessage.h">
+-      <Filter>headers</Filter>
+-    </ClInclude>
+   </ItemGroup>
+   <ItemGroup>
+     <ResourceCompile Include="..\..\..\src\jrd\version.rc">
+diff --git a/builds/win32/msvc15/yvalve_static.vcxproj b/builds/win32/msvc15/yvalve_static.vcxproj
+new file mode 100644
+index 0000000000..fc8c8319e3
+--- /dev/null
++++ b/builds/win32/msvc15/yvalve_static.vcxproj
+@@ -0,0 +1,197 @@
++﻿<?xml version="1.0" encoding="utf-8"?>
++<Project DefaultTargets="Build" ToolsVersion="15.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
++  <ItemGroup Label="ProjectConfigurations">
++    <ProjectConfiguration Include="Debug|Win32">
++      <Configuration>Debug</Configuration>
++      <Platform>Win32</Platform>
++    </ProjectConfiguration>
++    <ProjectConfiguration Include="Debug|x64">
++      <Configuration>Debug</Configuration>
++      <Platform>x64</Platform>
++    </ProjectConfiguration>
++    <ProjectConfiguration Include="Release|Win32">
++      <Configuration>Release</Configuration>
++      <Platform>Win32</Platform>
++    </ProjectConfiguration>
++    <ProjectConfiguration Include="Release|x64">
++      <Configuration>Release</Configuration>
++      <Platform>x64</Platform>
++    </ProjectConfiguration>
++  </ItemGroup>
++  <ItemGroup>
++    <ClCompile Include="..\..\..\src\auth\SecureRemotePassword\client\SrpClient.cpp" />
++    <ClCompile Include="..\..\..\src\auth\SecurityDatabase\LegacyClient.cpp" />
++    <ClCompile Include="..\..\..\src\plugins\crypt\arc4\Arc4.cpp" />
++    <ClCompile Include="..\..\..\src\remote\client\BlrFromMessage.cpp" />
++    <ClCompile Include="..\..\..\src\remote\client\interface.cpp" />
++    <ClCompile Include="..\..\..\src\yvalve\alt.cpp" />
++    <ClCompile Include="..\..\..\src\yvalve\array.cpp" />
++    <ClCompile Include="..\..\..\src\yvalve\blob.cpp" />
++    <ClCompile Include="..\..\..\src\yvalve\config\os\win32\config_root.cpp" />
++    <ClCompile Include="..\..\..\src\yvalve\DistributedTransaction.cpp" />
++    <ClCompile Include="..\..\..\src\yvalve\gds.cpp" />
++    <ClCompile Include="..\..\..\src\yvalve\keywordsStub.cpp" />
++    <ClCompile Include="..\..\..\src\yvalve\MasterImplementation.cpp" />
++    <ClCompile Include="..\..\..\src\yvalve\perf.cpp" />
++    <ClCompile Include="..\..\..\src\yvalve\PluginManager.cpp" />
++    <ClCompile Include="..\..\..\src\yvalve\preparse.cpp" />
++    <ClCompile Include="..\..\..\src\yvalve\user_dsql.cpp" />
++    <ClCompile Include="..\..\..\src\yvalve\utl.cpp" />
++    <ClCompile Include="..\..\..\src\yvalve\why.cpp" />
++  </ItemGroup>
++  <ItemGroup>
++    <ClInclude Include="..\..\..\src\auth\SecureRemotePassword\client\SrpClient.h" />
++    <ClInclude Include="..\..\..\src\auth\SecurityDatabase\LegacyClient.h" />
++    <ClInclude Include="..\..\..\src\auth\trusted\AuthSspi.h" />
++    <ClInclude Include="..\..\..\src\plugins\crypt\arc4\Arc4.h" />
++    <ClInclude Include="..\..\..\src\remote\client\BlrFromMessage.h" />
++    <ClInclude Include="..\..\..\src\yvalve\alt_proto.h" />
++    <ClInclude Include="..\..\..\src\yvalve\array_proto.h" />
++    <ClInclude Include="..\..\..\src\yvalve\blob_proto.h" />
++    <ClInclude Include="..\..\..\src\yvalve\gds_proto.h" />
++    <ClInclude Include="..\..\..\src\yvalve\keywordsStub.h" />
++    <ClInclude Include="..\..\..\src\yvalve\perf.h" />
++    <ClInclude Include="..\..\..\src\yvalve\perf_proto.h" />
++    <ClInclude Include="..\..\..\src\yvalve\PluginManager.h" />
++    <ClInclude Include="..\..\..\src\yvalve\prepa_proto.h" />
++    <ClInclude Include="..\..\..\src\yvalve\user__proto.h" />
++    <ClInclude Include="..\..\..\src\yvalve\utl_proto.h" />
++    <ClInclude Include="..\..\..\src\yvalve\why_proto.h" />
++  </ItemGroup>
++  <PropertyGroup Label="Globals">
++    <ProjectGuid>{2BEE529C-ABA2-4E95-AB24-88CEC3A6DB55}</ProjectGuid>
++    <RootNamespace>yvalve_static</RootNamespace>
++    <WindowsTargetPlatformVersion Condition="'$(VisualStudioVersion)'=='15.0'">10.0.17763.0</WindowsTargetPlatformVersion>
++    <WindowsTargetPlatformVersion Condition="'$(VisualStudioVersion)'=='16.0'">10.0</WindowsTargetPlatformVersion>
++    <WindowsTargetPlatformVersion Condition="'$(VisualStudioVersion)'=='17.0'">10.0</WindowsTargetPlatformVersion>
++  </PropertyGroup>
++  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
++  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'" Label="Configuration">
++    <ConfigurationType>StaticLibrary</ConfigurationType>
++    <UseOfMfc>false</UseOfMfc>
++    <CharacterSet>MultiByte</CharacterSet>
++    <PlatformToolset Condition="'$(VisualStudioVersion)'=='15.0'">v141</PlatformToolset>
++    <PlatformToolset Condition="'$(VisualStudioVersion)'=='16.0'">v142</PlatformToolset>
++    <PlatformToolset Condition="'$(VisualStudioVersion)'=='17.0'">v143</PlatformToolset>
++  </PropertyGroup>
++  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'" Label="Configuration">
++    <ConfigurationType>StaticLibrary</ConfigurationType>
++    <UseOfMfc>false</UseOfMfc>
++    <CharacterSet>MultiByte</CharacterSet>
++    <PlatformToolset Condition="'$(VisualStudioVersion)'=='15.0'">v141</PlatformToolset>
++    <PlatformToolset Condition="'$(VisualStudioVersion)'=='16.0'">v142</PlatformToolset>
++    <PlatformToolset Condition="'$(VisualStudioVersion)'=='17.0'">v143</PlatformToolset>
++  </PropertyGroup>
++  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'" Label="Configuration">
++    <ConfigurationType>StaticLibrary</ConfigurationType>
++    <UseOfMfc>false</UseOfMfc>
++    <CharacterSet>MultiByte</CharacterSet>
++    <PlatformToolset Condition="'$(VisualStudioVersion)'=='15.0'">v141</PlatformToolset>
++    <PlatformToolset Condition="'$(VisualStudioVersion)'=='16.0'">v142</PlatformToolset>
++    <PlatformToolset Condition="'$(VisualStudioVersion)'=='17.0'">v143</PlatformToolset>
++  </PropertyGroup>
++  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'" Label="Configuration">
++    <ConfigurationType>StaticLibrary</ConfigurationType>
++    <UseOfMfc>false</UseOfMfc>
++    <CharacterSet>MultiByte</CharacterSet>
++    <PlatformToolset Condition="'$(VisualStudioVersion)'=='15.0'">v141</PlatformToolset>
++    <PlatformToolset Condition="'$(VisualStudioVersion)'=='16.0'">v142</PlatformToolset>
++    <PlatformToolset Condition="'$(VisualStudioVersion)'=='17.0'">v143</PlatformToolset>
++  </PropertyGroup>
++  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.props" />
++  <ImportGroup Label="ExtensionSettings">
++  </ImportGroup>
++  <ImportGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'" Label="PropertySheets">
++    <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
++    <Import Project="$(VCTargetsPath)Microsoft.CPP.UpgradeFromVC71.props" />
++    <Import Project="FirebirdCommon.props" />
++    <Import Project="FirebirdDebug.props" />
++  </ImportGroup>
++  <ImportGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'" Label="PropertySheets">
++    <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
++    <Import Project="$(VCTargetsPath)Microsoft.CPP.UpgradeFromVC71.props" />
++    <Import Project="FirebirdCommon.props" />
++    <Import Project="FirebirdRelease.props" />
++  </ImportGroup>
++  <ImportGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'" Label="PropertySheets">
++    <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
++    <Import Project="$(VCTargetsPath)Microsoft.CPP.UpgradeFromVC71.props" />
++    <Import Project="FirebirdCommon.props" />
++    <Import Project="FirebirdDebug.props" />
++  </ImportGroup>
++  <ImportGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'" Label="PropertySheets">
++    <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
++    <Import Project="$(VCTargetsPath)Microsoft.CPP.UpgradeFromVC71.props" />
++    <Import Project="FirebirdCommon.props" />
++    <Import Project="FirebirdRelease.props" />
++  </ImportGroup>
++  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
++    <TargetName>fbclient_static</TargetName>
++  </PropertyGroup>
++  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
++    <TargetName>fbclient_static</TargetName>
++  </PropertyGroup>
++  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
++    <TargetName>fbclient_static</TargetName>
++  </PropertyGroup>
++  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
++    <TargetName>fbclient_static</TargetName>
++  </PropertyGroup>
++  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
++    <ClCompile>
++      <Optimization>Disabled</Optimization>
++      <PreprocessorDefinitions>WIN32;_DEBUG;_LIB;DEV_BUILD;SUPERSERVER;%(PreprocessorDefinitions)</PreprocessorDefinitions>
++      <PrecompiledHeader>
++      </PrecompiledHeader>
++    </ClCompile>
++  </ItemDefinitionGroup>
++  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
++    <Midl>
++      <TargetEnvironment>X64</TargetEnvironment>
++    </Midl>
++    <ClCompile>
++      <Optimization>Disabled</Optimization>
++      <PreprocessorDefinitions>WIN32;_DEBUG;_LIB;DEV_BUILD;SUPERSERVER;%(PreprocessorDefinitions)</PreprocessorDefinitions>
++      <PrecompiledHeader>
++      </PrecompiledHeader>
++    </ClCompile>
++  </ItemDefinitionGroup>
++  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
++    <ClCompile>
++      <PreprocessorDefinitions>WIN32;NDEBUG;_LIB;SUPERSERVER;%(PreprocessorDefinitions)</PreprocessorDefinitions>
++      <PrecompiledHeader>
++      </PrecompiledHeader>
++    </ClCompile>
++  </ItemDefinitionGroup>
++  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
++    <Midl>
++      <TargetEnvironment>X64</TargetEnvironment>
++    </Midl>
++    <ClCompile>
++      <PreprocessorDefinitions>WIN32;NDEBUG;_LIB;SUPERSERVER;%(PreprocessorDefinitions)</PreprocessorDefinitions>
++      <PrecompiledHeader>
++      </PrecompiledHeader>
++    </ClCompile>
++  </ItemDefinitionGroup>
++  <ItemGroup>
++    <ProjectReference Include="common.vcxproj">
++      <Project>{15605f44-bffd-444f-ad4c-55dc9d704465}</Project>
++      <Private>true</Private>
++      <ReferenceOutputAssembly>false</ReferenceOutputAssembly>
++      <CopyLocalSatelliteAssemblies>false</CopyLocalSatelliteAssemblies>
++      <LinkLibraryDependencies>true</LinkLibraryDependencies>
++      <UseLibraryDependencyInputs>false</UseLibraryDependencyInputs>
++    </ProjectReference>
++    <ProjectReference Include="remote.vcxproj">
++      <Project>{4bcc693d-1745-45ed-8302-e5e2f979549a}</Project>
++      <Private>true</Private>
++      <ReferenceOutputAssembly>false</ReferenceOutputAssembly>
++      <CopyLocalSatelliteAssemblies>false</CopyLocalSatelliteAssemblies>
++      <LinkLibraryDependencies>true</LinkLibraryDependencies>
++      <UseLibraryDependencyInputs>false</UseLibraryDependencyInputs>
++    </ProjectReference>
++  </ItemGroup>
++  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
++  <ImportGroup Label="ExtensionTargets">
++  </ImportGroup>
++</Project>
+diff --git a/builds/win32/msvc15/yvalve_static.vcxproj.filters b/builds/win32/msvc15/yvalve_static.vcxproj.filters
+new file mode 100644
+index 0000000000..1cfdee484e
+--- /dev/null
++++ b/builds/win32/msvc15/yvalve_static.vcxproj.filters
+@@ -0,0 +1,135 @@
++﻿<?xml version="1.0" encoding="utf-8"?>
++<Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
++  <ItemGroup>
++    <Filter Include="headers">
++      <UniqueIdentifier>{e851796a-334f-465a-87d4-3a8493cde72c}</UniqueIdentifier>
++    </Filter>
++    <Filter Include="source">
++      <UniqueIdentifier>{c8501fd3-5859-4685-baad-969e1b6e2e1c}</UniqueIdentifier>
++    </Filter>
++    <Filter Include="GPRE files">
++      <UniqueIdentifier>{754afcc7-5b6d-4620-abe9-78b4653e08b0}</UniqueIdentifier>
++    </Filter>
++    <Filter Include="preprocessed">
++      <UniqueIdentifier>{5ee9ba85-e5ee-4f0d-a7b6-9ac703ff491c}</UniqueIdentifier>
++    </Filter>
++    <Filter Include="Auth">
++      <UniqueIdentifier>{2d91d43b-c689-41b3-9d55-227f0a4f5193}</UniqueIdentifier>
++    </Filter>
++    <Filter Include="Remote client">
++      <UniqueIdentifier>{e5984b18-8167-41b3-9f37-51ccf2fd566e}</UniqueIdentifier>
++    </Filter>
++  </ItemGroup>
++  <ItemGroup>
++    <ClCompile Include="..\..\..\src\yvalve\why.cpp">
++      <Filter>source</Filter>
++    </ClCompile>
++    <ClCompile Include="..\..\..\src\yvalve\alt.cpp">
++      <Filter>source</Filter>
++    </ClCompile>
++    <ClCompile Include="..\..\..\src\yvalve\array.cpp">
++      <Filter>source</Filter>
++    </ClCompile>
++    <ClCompile Include="..\..\..\src\yvalve\blob.cpp">
++      <Filter>source</Filter>
++    </ClCompile>
++    <ClCompile Include="..\..\..\src\yvalve\DistributedTransaction.cpp">
++      <Filter>source</Filter>
++    </ClCompile>
++    <ClCompile Include="..\..\..\src\yvalve\gds.cpp">
++      <Filter>source</Filter>
++    </ClCompile>
++    <ClCompile Include="..\..\..\src\yvalve\keywordsStub.cpp">
++      <Filter>source</Filter>
++    </ClCompile>
++    <ClCompile Include="..\..\..\src\yvalve\perf.cpp">
++      <Filter>source</Filter>
++    </ClCompile>
++    <ClCompile Include="..\..\..\src\yvalve\preparse.cpp">
++      <Filter>source</Filter>
++    </ClCompile>
++    <ClCompile Include="..\..\..\src\yvalve\user_dsql.cpp">
++      <Filter>source</Filter>
++    </ClCompile>
++    <ClCompile Include="..\..\..\src\yvalve\utl.cpp">
++      <Filter>source</Filter>
++    </ClCompile>
++    <ClCompile Include="..\..\..\src\auth\SecurityDatabase\LegacyClient.cpp">
++      <Filter>Auth</Filter>
++    </ClCompile>
++    <ClCompile Include="..\..\..\src\remote\client\interface.cpp">
++      <Filter>Remote client</Filter>
++    </ClCompile>
++    <ClCompile Include="..\..\..\src\yvalve\PluginManager.cpp">
++      <Filter>source</Filter>
++    </ClCompile>
++    <ClCompile Include="..\..\..\src\yvalve\MasterImplementation.cpp">
++      <Filter>source</Filter>
++    </ClCompile>
++    <ClCompile Include="..\..\..\src\auth\SecureRemotePassword\client\SrpClient.cpp">
++      <Filter>Auth</Filter>
++    </ClCompile>
++    <ClCompile Include="..\..\..\src\plugins\crypt\arc4\Arc4.cpp">
++      <Filter>source</Filter>
++    </ClCompile>
++    <ClCompile Include="..\..\..\src\remote\client\BlrFromMessage.cpp">
++      <Filter>Remote client</Filter>
++    </ClCompile>
++    <ClCompile Include="..\..\..\src\yvalve\config\os\win32\config_root.cpp">
++      <Filter>source</Filter>
++    </ClCompile>
++  </ItemGroup>
++  <ItemGroup>
++    <ClInclude Include="..\..\..\src\yvalve\why_proto.h">
++      <Filter>headers</Filter>
++    </ClInclude>
++    <ClInclude Include="..\..\..\src\yvalve\alt_proto.h">
++      <Filter>headers</Filter>
++    </ClInclude>
++    <ClInclude Include="..\..\..\src\yvalve\array_proto.h">
++      <Filter>headers</Filter>
++    </ClInclude>
++    <ClInclude Include="..\..\..\src\yvalve\blob_proto.h">
++      <Filter>headers</Filter>
++    </ClInclude>
++    <ClInclude Include="..\..\..\src\yvalve\gds_proto.h">
++      <Filter>headers</Filter>
++    </ClInclude>
++    <ClInclude Include="..\..\..\src\yvalve\keywordsStub.h">
++      <Filter>headers</Filter>
++    </ClInclude>
++    <ClInclude Include="..\..\..\src\yvalve\perf.h">
++      <Filter>headers</Filter>
++    </ClInclude>
++    <ClInclude Include="..\..\..\src\yvalve\perf_proto.h">
++      <Filter>headers</Filter>
++    </ClInclude>
++    <ClInclude Include="..\..\..\src\yvalve\prepa_proto.h">
++      <Filter>headers</Filter>
++    </ClInclude>
++    <ClInclude Include="..\..\..\src\yvalve\user__proto.h">
++      <Filter>headers</Filter>
++    </ClInclude>
++    <ClInclude Include="..\..\..\src\yvalve\utl_proto.h">
++      <Filter>headers</Filter>
++    </ClInclude>
++    <ClInclude Include="..\..\..\src\auth\SecurityDatabase\LegacyClient.h">
++      <Filter>headers</Filter>
++    </ClInclude>
++    <ClInclude Include="..\..\..\src\auth\trusted\AuthSspi.h">
++      <Filter>headers</Filter>
++    </ClInclude>
++    <ClInclude Include="..\..\..\src\yvalve\PluginManager.h">
++      <Filter>headers</Filter>
++    </ClInclude>
++    <ClInclude Include="..\..\..\src\auth\SecureRemotePassword\client\SrpClient.h">
++      <Filter>headers</Filter>
++    </ClInclude>
++    <ClInclude Include="..\..\..\src\plugins\crypt\arc4\Arc4.h">
++      <Filter>headers</Filter>
++    </ClInclude>
++    <ClInclude Include="..\..\..\src\remote\client\BlrFromMessage.h">
++      <Filter>headers</Filter>
++    </ClInclude>
++  </ItemGroup>
++</Project>
+diff --git a/builds/win32/setenvvar.bat b/builds/win32/setenvvar.bat
+index 332f67ad1b..043368eecc 100644
+--- a/builds/win32/setenvvar.bat
++++ b/builds/win32/setenvvar.bat
+@@ -17,6 +17,7 @@ for %%v in ( %* )  do (
+   ( if /I "%%v"=="RELEASE" ( (set FB_DBG=) && (set FB_CONFIG=release) ) )
+   ( if /I "%%v"=="CLIENT_ONLY" (set FB_CLIENT_ONLY=TRUE) )
+   ( if /I "%%v"=="CLIENT_ONLY=FALSE" (set FB_CLIENT_ONLY=) )
++  ( if /I "%%v"=="ENABLE_FBCLIENT_STATIC" (set FB_ENABLE_FBCLIENT_STATIC=TRUE) )
+ )
+ 
+ @if not defined FB_CONFIG (
+@@ -123,10 +124,10 @@ rem NOTE 2 This code is likely to break again in the future !!!!
+   @setlocal EnableDelayedExpansion
+ 
+   if not exist "!VCToolsRedistDir!!VSCMD_ARG_TGT_ARCH!\Microsoft.VC!MSVC_RUNTIME_MAJOR_VERSION!!MSVC_RUNTIME_MINOR_VERSION!.CRT" (
+-    @endlocal  
++    @endlocal
+     set MSVC_RUNTIME_MINOR_VERSION=3
+   ) else (
+-    @endlocal  
++    @endlocal
+   )
+   set MSVC_RUNTIME_LIBRARY_VERSION=%MSVC_RUNTIME_MAJOR_VERSION%%MSVC_RUNTIME_MINOR_VERSION%
+ 
